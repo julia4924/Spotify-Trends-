@@ -1,0 +1,985 @@
+---
+title: "Analiza trendów Spotify w latach 2010-2019"
+author: ""
+date: ""
+output:
+ prettydoc::html_pretty:
+    theme: leonids 
+toc: yes
+toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE,warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r,out.width='40%',fig.align='right'}
+
+knitr::include_graphics("images.png")
+```
+
+# 1.Cele projektu
+
+Celem mojego projektu jest wizualizacja zmian jakie zachodziły wśród
+użytkowników platformy streamingowej Spotify. Mam na celu przeprowadzić
+analizę trendów muzycznych w latach 2010-2019 oraz zbadać zależności
+między konkretnymi zmiennymi i ich rozkładem na przestrzeni lat.
+
+# 2.Data dictionary
+
+Wybrany przeze mnie zbiór danych zawiera dane na temat najczęściej
+słuchanych przez odbiorców platformy Spotify utworów w latach 2010-2019.
+Zawarte w nim są następujące zmienne:
+
+-   **title -** tytuł piosenki
+
+-   **artist -** artysta,którego piosenka debiutowała
+
+-   **top genre -** określa gatunek danego utworu
+
+-   **year -** rok,w którym dana piosenka była najchętniej słuchana
+
+-   **bpm -** tempo utworu (bity na minutę)
+
+-   **nrgy -** energia utworu, czy jest szybki,wolny (wyższe wartości
+    oznaczają bardziej energiczny)
+
+-   **dnce -** zmienna określa,czy łatwo jest tańczyć do danej
+    piosenki(wyższe wartości oznaczają,że jest łatwiej)
+
+-   **dB -** decybele (głośność utworu)
+
+-   **live -** prawdopodobieństwo,że piosenka była nagrywana live z
+    publicznością
+
+-   **val -** wyższe wartości oznaczają ,że utwór jest pozytywny,
+    radosny
+
+-   **dur -** czas trwania piosenki
+
+-   **acous -** akustyczność utworu
+
+-   **spch -** wyższe wartości oznaczają więcej słów w piosence
+
+-   **pop -** popularność (wyższe wartości oznaczają większą
+    popularność)
+
+-   **country -** kraj,w którym dany utwór był najbardziej popularny w
+    konkretnym roku
+
+# 3.Analiza
+
+## 1.Przygotowywanie danych
+
+```{r,warning=FALSE,message=FALSE}
+library(readr)
+library(knitr)
+tabelka<-read.csv("top10ss.csv",sep=";")
+kable(head(tabelka))
+brakujace_wartosci<-colSums(is.na(tabelka))
+tabelka<-na.omit(tabelka)
+#colSums(is.na(tabelka))
+tabelka$year<-as.factor(tabelka$year)
+tabelka$top.genre<-as.factor(tabelka$top.genre)
+tabelka$country<-as.factor(tabelka$country)
+tabelka$X<-NULL
+```
+
+## 2. Wizualizacja
+
+### `Histogram popularności w latach 2010-2019`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+popularnosc<-tabelka$pop
+p<-data.frame(popular=popularnosc)
+ggplot(tabelka,aes(x=pop))+
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black", alpha = 0.7)+
+  facet_wrap(~year)+
+  theme_minimal()
+```
+
+Histogram przedstawia rozkład popularności piosenek w latach 2010, 2011
+i 2012. Każdy panel reprezentuje inny rok, a słupki wewnątrz panelu
+przedstawiają różne przedziały popularności.Dostrzec można,że wykres
+rozkładu wskazuje na to,iż jest to rozkład wielomodalny,który może być
+interpretowany jako oznaka zmieniających się trendów w preferencjach
+słuchaczy lub zmiennych wpływających na popularność. Wielomodalność
+oznacza, że dane mają więcej niż jedno maksimum lokalne, co może być
+związane z różnymi podgrupami utworów, różnymi okresami czasowymi lub
+różnymi zmiennymi wpływającymi na popularność. Poszczególne mody mogą
+reprezentować inne kategorie muzyczne lub style. Wielomodalność może
+wynikać z różnic w popularności między gatunkami muzycznymi,które zaś
+mogły wynikać ze zmieniających się trendów społeczno-kulturowych ,
+wpływających na preferencje słuchaczy.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(plotly)
+hist_pop<-ggplot(tabelka,aes(x=pop,fill=top.genre))+
+  geom_histogram(binwidth = 5, position = "identity", alpha = 0.7)+
+  facet_wrap(~year)+
+  labs(title = "Histogram Popularności w Różnych Latach i Gatunkach", x = "Popularność", y = "Liczba piosenek")+
+  theme_minimal()
+ggplotly(hist_pop)
+```
+
+Powyższy histogram przedstawia zróżnicowanie gatunków muzycznych wśród
+użytkowników platformy Spotify z widoczną przewagą występowania piosenek
+o średniej w kierunku do wysokiej wartości współczynnika popularności o
+gatunku \`dance pop\` na przestrzeni lat 2010-2019 w porównaniu do
+innych gatunków muzycznych.Piosenki o szczególnie wysokim współczynniku
+popularności tego gatunku występowały w roku 2015.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka, aes(x = year, y = dnce)) +
+  geom_boxplot() +
+  labs(title = "Rozkład taneczności w różnych Latach", x = "Rok", y = "Taneczność")+
+  theme_minimal()
+```
+
+Powyższy wykres pudełkowy przedstawia zależności między tanecznością
+utworów, a latami. Mediana w niemalże każdym z wykresów jest wysoko,co
+wskazuje na to,że większość utworów w danych latach miało wysoki
+współczynnik taneczności,poza rokiem 2016. Największe zmienności
+taneczności miały miejsce w roku 2014 o czym świadczy długość
+wykresu.Taneczność ma tendencję wzrostowo- spadkową na przestrzeni
+lat.Nie ma znaczących różnic między kolejnymi latami
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka, aes(x = year, y = nrgy)) +
+  geom_boxplot() +
+  labs(title = "Rozkład energiczności w różnych Latach", x = "Rok", y = "Energiczność")+
+  theme_minimal()
+```
+
+Powyższy wykres przedstawia rozkład energiczności utworów słuchanych na
+platformie Spotify na przestrzeni lat. Dostrzec można tendencję spadkową
+tego czynnika. Największe zmienności energiczności odnotowano w roku
+2019, najniższe wartości w roku 2016, zaś najwyższe w 2013.Mediana tego
+współczynnika jest wysoko, zatem mimo tendencji spadkowej wartości
+energiczności były wysokie na przestrzeni lat.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+
+ggplot(tabelka, aes(x = year, y = val)) +
+  geom_boxplot() +
+  labs(title = "", x = "Rok", y = "Val")+
+  theme_minimal()
+
+```
+
+Powyższy wykres przedstawia rozkład współczynnika `val` (określającego
+czy utwór jest radosny) na przestrzeni lat. Zauważyć można ,iż przyjmuje
+on wysokie wartości na przestrzeni lat. Najmniejsze w 2016 i 2015, zaś
+największe w 2014.Również w 2014 występują największe zmienności w
+wartości tego współczynnika.
+
+### `Analiza korelacji poszczególnych zmiennych`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(corrplot)
+tabb<-tabelka %>% 
+  select(bpm,nrgy,dnce,dB,live,val,dur,acous,spch,pop)
+library(ggcorrplot)
+
+t<-cor(tabb[,c("bpm","nrgy","dnce","dB","live","val","dur","acous","spch","pop")])
+corrplot(t,
+  method = "number"
+  
+)
+```
+
+Na mapie korelacji widać,iż kilka zmiennych ma współczynnik korelacji
+równy zeru, co oznacza brak lub bardzo słabą korelację między zmiennymi,
+są niezależne . Są to między innymi `bpm` i `pop`, `spch` i `acous` czy
+`val` i `live`, zatem te ,które są reprezentowane białym lub zbliżonym
+do białego kolorem. Wartości `acous` i `nrgy` mają współczynnik
+korelacji bliski -1, co oznacza, że wartości zmieniają się w przeciwnych
+kierunkach- gdy jedno rośnie, drugie maleje. Zmienne reprezentowane
+odcieniami czerwonego wskazują na wartości bliższe 1 ,co za tym idzie
+ukazują dodatnią korelację, co za tym idzie - wartości tych
+współczynników zmieniają się w tym samym kierunku(jednocześnie rosną
+bądź maleją).
+
+```{r,warning=FALSE,message=FALSE}
+library(hrbrthemes)
+library(ggplot2)
+tt<-as.data.frame(t)
+ggplot(tt,aes(x=nrgy,y=dnce))+
+  geom_point()+
+  geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE,level = 0.95)
+
+ggplot(tt,aes(x=nrgy,y=acous))+
+  geom_point()+
+  geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
+```
+
+Widać zatem ,że dla zmiennych mających dodatni współczynnik korelacji,
+wraz ze wzrostem jednej,rośnie druga.Zaś na drugim wykresie,który
+obrazuje zmienne mające ujemny współczynnik korelacji, gdy energiczność
+rośnie, akustyczność utworu maleje.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(tidyverse)
+linia<-tabelka %>% 
+group_by(year) %>% 
+  summarise(mean_dnce=round(mean(dnce)),
+            mean_nrgy=round(mean(nrgy)),
+            mean_dB=round(mean(dB)),
+            mean_acus=round(mean(acous)),
+            mean_dur=round(mean(dur)),
+            mean_bpm=round(mean(bpm)),
+            mean_pop=round(mean(pop)))
+ 
+library(tidyr)
+library(plotly)
+data_long <- gather(linia, key = "Variable", value = "Value", -year)
+
+# Wykres linii w ggplot2
+lin_wykres<-ggplot(data_long, aes(x = year, y = Value, color = Variable)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Średnie wartości dla każdej zmiennej w poszczególnych latach",
+       x = "Rok", y = "Średnia Wartość", color = "Zmienna") +
+  theme_minimal()
+ggplotly(lin_wykres)
+```
+
+Powyższy interaktywny wykres punktowy dostarcza informacji o średnich
+wartościach poszczególnych zmiennych na przestrzeni lat.Dostrzec można
+spadek wartości **bpm** i **dur ,** zaś wzrost pozostałych miar, w
+szczególności **pop i acus.** Zatem na przestrzeni lat zyskiwały
+popularność utwory, które były bardziej akustyczne oraz bardziej
+taneczne i zarazem krótsze.
+
+### `Klastrowanie`
+
+Klastrowanie to technika, polegająca na podziale zbioru danych na grupy
+ze względu na podobieństwa między poszczególnymi elementami. Głównym
+celem jego stosowania jest znalezienie naturalnych grup danych , gdzie
+elementy wewnątrz klastra są odpowiednio klasyfikowane według
+konkretnych cech, a poszczególne klastry różnią się od siebie. Stosuję
+klastrowanie w celu wyodrębnienia grup wśród piosenek, jakie pojawiły
+się w zbiorze danych Spotify na podstawie cech takich jak tempo,
+akustyczność czy popularność. Pozwoli to na segmentację słuchaczy w
+latach 2010-2019 na podstawie ich preferencji muzycznych i tym samym na
+indentyfikację trendów muzycznych.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(factoextra)
+library(reshape2)
+library(dendextend)
+library(pheatmap)
+library(ggcorrplot)
+df_clustering<-tabelka[c(12,13)]
+df_clustering<-scale(df_clustering)
+
+clusters_ws<-fviz_nbclust(df_clustering,kmeans, 
+                           method="wss")
+
+clusters_s<- fviz_nbclust(df_clustering,kmeans,method="silhouette")
+
+optimal_cluster<-kmeans(df_clustering,centers = 3,iter.max = 25)
+tabelka$cluster<-optimal_cluster$cluster
+tabelka$cluster<-as.factor(tabelka$cluster)
+#fviz_cluster(optimal_cluster,data=df_clustering,labelsize = 0)
+```
+
+Po utworzeniu klastrów poniżej widnieją wizualizacje macierzy korelacji
+dla poszczególnych klastrów:
+
+`1)`
+
+```{r,warning=FALSE,message=FALSE}
+library(corrplot)
+dff<-tabelka[-c(1,2,3,4,15)]
+dff<-dff[dff$cluster==1,]
+
+corrplot(cor(dff[-c(11)]),method="number")
+
+```
+
+Na wykresie widać ujemny współczynnik korelacji między innymi między
+zmiennymi **acous i nrgy**, **dur** i **dB** . Najniższą wartość tego
+współczynnika widać między **dur** i **val** czy **bpm** i **dnce ,**co
+wskazuje , że ich wartości zmieniają się w przeciwnych kierunkach.
+Najwyższe dodatnie wartości współczynnika korelacji występują między
+zmiennymi **dB**, **nrgy** czy **dnce** i **val.**
+
+`2)`
+
+```{r,warning=FALSE,message=FALSE}
+library(corrplot)
+df2<-tabelka[-c(1,2,3,4,15)]
+df2<-df2[df2$cluster==2,]
+
+corrplot(cor(df2[-c(11)]),method="number")
+```
+
+W drugim klastrze widocznie wzrósł współczynnik korelacji między **nrgy
+i dB ,val i pop,** które wcześniej były niezależne, gdyż ich
+współczynnik korelacji był równy zero.Najwyższe wartości tego
+współczynnika występują między zmiennymi **dnce i val** czy **spch i
+live.** Najniższą wartość dostrzec można zaś między **acous i nrgy,**
+który jest znacznie niższy od tego w pierwszym klastrze, ponadto niższe
+są także wartości przy **acous** i **dnce.**
+
+`3)`
+
+```{r,warning=FALSE,message=FALSE}
+library(corrplot)
+df3<-tabelka[-c(1,2,3,4,15)]
+
+df3<-df3[df3$cluster==3,]
+corrplot(cor(df3[-c(11)]),method="number")
+```
+
+Tutaj znacznie spadła wartość współczynnika korelacji dla **pop** i
+pozostałych zmiennych, czy dla **spch i dnce** ,czy **pop i
+dance**,które w porównaniu z drugim klastrem są ujemne.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+gr<-ggplot(tabelka,aes(x=cluster,y=dnce,fill=cluster))+
+  geom_boxplot()
+gr
+
+```
+
+Na powyższym wykresie widać, że piosenki o najwyższym współczynniku
+taneczności przynależą do 1 klastra, tam również jest najniższa z
+odnotowanych wartości jako wartość odstająca, zaś te o najniższym
+współczynniku należą do drugiego klastra.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka,aes(x=cluster, y=val,fill=cluster))+
+  geom_boxplot()
+
+```
+
+Powyższy boxplot przedstawia rozkład wartości współczynnika `val`
+określającego pozytywność utworu w każdym z klastrów. Jak widać
+najwyższe wielkości znajdują się w pierwszym klastrze, najniższe zaś w
+drugim. W trzecim klastrze również występują głównie piosenki o średniej
+wartości współczynika `val`.Najdłuższe wąsy wykresu pudełkowego dla
+pierwszego klastra, może wskazywać na największą zmienność danych w
+ciągu lat.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka,aes(x=cluster, y=acous,fill=cluster))+
+   geom_boxplot()
+
+ggplot(tabelka,aes(x=cluster, y=bpm,fill=cluster))+
+   geom_boxplot()
+
+```
+
+Powyżej widać rozkład akustyczności w każdym z klastrów. Piosenki o
+najwyższej akustyczności skumulowane są w drugim klastrze , zaś te o
+najniższej w pierwszym i trzecim(tutaj również najwyższe wartości
+odstające). Te utwory o wolniejszym tempie przypisane są do drugiego
+klastra, zaś te o szybszym - głównie do pierwszego.W trzecim klastrze
+zawartych jest dużo wartości, które są wyższe od trzeciego kwartyla,
+jednak nie mają wartości odstających.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka, aes(x=cluster, y=spch, fill=cluster))+
+  geom_boxplot()
+library(plotly)
+tann<-ggplot(tabelka, aes(x = spch,fill=cluster)) +
+  geom_histogram(alpha=0.5, position = "identity") +
+  facet_wrap(~cluster)+
+  labs(title = "", x = "Współczynnik spch", y = "Liczba utworów")+
+  theme_minimal()
+tann
+ggplot(tabelka, aes(x=cluster, y=dur, fill=cluster))+
+  geom_boxplot()
+
+
+```
+
+Tutaj zaś widać, iż piosenki o największej ilości słów w tekście
+znajdują się w trzecim klastrze, zaś te o najmniejszej ich ilości w
+pierwszym. Podobnie z długością trwania utworu.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka, aes(x=cluster, y=dB, fill=cluster))+
+  geom_boxplot()
+
+```
+
+Powyżej widać rozkład współczynnika `dB` określającego głośność utworów.
+Piosenki o najniższej jego wartości przypisane są do drugiego klastra,
+zaś te o najwyższej-do pierwszego.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka, aes(x=cluster, y=pop, fill=cluster))+
+  geom_boxplot()
+
+library(plotly)
+tann<-ggplot(tabelka, aes(x = pop,fill=cluster)) +
+  geom_histogram(alpha=0.5, position = "identity") +
+  facet_wrap(~cluster)+
+  labs(title = "", x = "Współczynnik spch", y = "Liczba utworów")+
+  theme_minimal()
+tann
+```
+
+Piosenki najmniej popularne spośród tych wymienionych w tabeli znajdują
+się w pierwszym klastrze, zaś te o najwyższych wartościach współczynnika
+`pop` odnotowano w drugim.
+
+`Jaka piosenka cieszyła się największą popularnością w danym roku?`
+
+Poniższy wykres słupkowy obrazuje jaka piosenka cieszyła się największą
+popularnością w danym roku.Dostarcza on informacji na temat wskaźnika
+popularności utworu, jego autora ,tytuł czy gatunek muzyczny tej
+piosenki.
+
+```{r,warning=FALSE,message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(forcats)
+library(plotly)
+
+
+tab<-tabelka %>% 
+  group_by(year) %>% 
+  filter(pop==max(pop)) %>% 
+  select(year,pop,title,artist,top.genre)
+
+wykres_tab<-tab %>% 
+  ggplot(aes(x=year,y=pop,fill=title)) + 
+  geom_bar(stat="identity",aes(text=paste("Rok:",year,"<br>Pop:",pop,"<br>Tytuł:",title,"<br>Autor:",artist,"<br>Gatunek",top.genre)))+
+  labs(
+    x="Rok",
+    y="Popularność"
+    
+  )+
+  guides(fill = guide_legend(title = "Nazwa Utworu"))
+ggplotly(wykres_tab,tooltip = "text")
+```
+
+`Mapa ilustrująca najpopularniejsze utwory w danym roku`
+
+```{r,warning=FALSE,message=FALSE}
+library(tidyverse)
+library(leaflet)
+library(countrycode)
+library(ggplot2)
+library(plotly)
+
+tab3<-tabelka %>% 
+  group_by(year) %>% 
+  filter(pop==max(pop)) 
+
+
+
+mapa <- plot_geo(tab3, locations = ~country, color = ~pop,
+                 text = ~paste("Piosenka: ", title, "<br>",
+                               "Współczynnik Popularności: ", pop,"<br>",
+                               "Rok:",year,"<br>",
+                               "Energiczność:", nrgy,"<br>",
+                               "Głośność:", bpm, "<br>",
+                               "Taneczność:", dnce,"<br>",
+                               "Artysta:", artist,"<br>",
+                               "Gatunek:" ,top.genre,"<br>"
+                               )) %>%
+  add_trace(type = "choropleth", locationmode = "country names") %>%
+  colorbar(title = "Współczynnik Popularności")
+
+ggplotly(mapa)
+```
+
+Powyższa mapka przedstawia kraje,w których w danym roku ,w którym
+odsłuchiwana piosenka uzyskała najwyższy współczynnik popularności.Jak
+widać najwyższą wartość tego współczynnika odnotowano w Nowej Zelandii w
+roku 2019 ,dzięki piosence "Memories" zespołu Maroon 5, zaś najniższą
+wartość odnotowano dla piosenki "Titanium" autorstwa Davida Guetta w
+2012 roku w Hiszpanii.Ponadto piosenka "One Kiss" Calvina Harrisa w 2018
+roku wraz z utworem "All of me" John Legend w 2014 uzyskały ten sam
+(równy 86) współczynnik popularności.
+
+`Mapa najbardziej popularnych utworów dla każdego kraju, który wystąpił w ramce danych`
+
+```{r,warning=FALSE,message=FALSE}
+library(plotly)
+library(ggplot2)
+geo <- list(
+  scope = "world",
+  projection = list(type = "orthographic"),
+  showland = TRUE,
+  resolution = 100,
+  landcolor = toRGB("gray90"),
+  countrycolor = toRGB("gray80"),
+  oceancolor = toRGB("lightsteelblue2"),
+  showocean = TRUE
+)
+
+tab6<-tabelka %>% 
+  group_by(country) %>% 
+  filter(pop==max(pop)) %>% 
+  select(artist, country,title,top.genre,pop,year)
+  
+# Wykres mapy z oznaczeniem popularności piosenek w różnych krajach
+plot_geo(locationmode = "country names") %>%
+  add_trace(
+    type = "choropleth",
+    z = tab6$pop,
+    locations = tab6$country,
+    text = ~paste('Rok: ', tab6$year, '<br>Popularność: ', tab6$pop,"<br>Tytuł:" ,tab6$title, "<br>Autor:",tab6$artist,"<br>Gatunek:",tab6$top.genre),
+    colorscale = "Oranges"
+  ) %>%
+  layout(
+    title = "Popularność piosenek na Spotify w latach 2010-2019",
+    geo = geo,
+    showlegend = TRUE
+  )
+```
+
+`Wykres przedstawiający najczęściej słuchany gatunek dla każdego roku`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(tidyverse)
+ przefiltrowane<-tabelka %>% 
+  group_by(year,top.genre) %>% 
+  count()
+
+ p<-przefiltrowane %>% 
+   group_by(year) %>% 
+   filter(n==max(n)) %>% 
+   select(year,top.genre,n) 
+ 
+ #procentowy udział każdego gatunku
+tt <-tabelka %>% 
+  group_by(top.genre) %>% 
+  summarise(liczba=n())
+
+ttt<-tt %>% 
+  mutate(procent=round(liczba/sum(liczba)*100,1)) 
+
+#wykres jaki gatunek najczesciej wystepowal w danych latach
+
+ggplot(p,mapping = aes(x=year,y=n,fill=top.genre))+
+  geom_bar(stat = "identity") +
+  labs(
+       x = "Rok",
+       y = "Liczba wystąpień",
+       fill = "Gatunek")+
+  theme_minimal()
+```
+
+Wykres słupkowy przedstawia jaki gatunek muzyczny cieszył się
+największym zainteresowaniem wśród słuchaczy platformy Spotify.
+
+```{r,warning=FALSE,message=FALSE}
+library(dplyr)
+library(graphics)
+library(plotly)
+# Przetwarzanie danych - grupowanie mniej licznych gatunków jako "others"
+dane <- ttt %>%
+  mutate(top.genre = fct_lump(top.genre, n = 2)) %>%
+  group_by(top.genre) %>%
+  summarise(liczba = sum(liczba))
+
+
+# Obliczenie procentowego udziału
+d <- dane %>%
+  mutate(Procent = round(liczba / sum(liczba) * 100,1))
+
+dd <- d %>%
+  mutate(top.genre = case_when(
+    str_detect(top.genre, "pop") ~ "Pop",
+    TRUE ~ "Others"
+  ))
+  
+  wykres_interaktywny <- plot_ly(
+  data = dd,
+  labels = ~top.genre,
+  values = ~Procent,
+  type = "pie",
+  textinfo = "label+percent",
+  hoverinfo = "text",
+  text = ~paste0(top.genre, ": ", sprintf("%.1f%%", Procent)),
+  marker = list(colors = c("#3498db", "#e74c3c"))  # Kolory dla "Pop" i "Others"
+) %>%
+  layout(title = "Procentowy udział gatunków muzycznych")
+  wykres_interaktywny
+
+```
+
+Tutaj zaś interaktywny wykres kołowy, który przedstawia procentowy
+udział gatunków rodzaju pop w ogólnej liczbie gatunków, jakie wystąpiły
+w latach 2010-2019.
+
+`Jakie konkretnie gatunki muzyczne były popularne w różnych latach?`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(plotly)
+gatunek<-tabelka %>% 
+  group_by(top.genre,year) %>%
+  count() 
+
+wykres_popular<-ggplot(gatunek, aes(x = year, y = n, fill = top.genre)) +
+  geom_bar(stat="identity",aes(text=paste("Rok:",year,"<br>Ilość wystąpień:",
+                                        n,"<br>Gatunek:",
+                                        top.genre)) )+
+  labs(
+    title = "Liczba wystąpień gatunków muzycznych w różnych latach",
+       x = "Rok",
+       y = "Liczba wystąpień",
+       fill = "Gatunek")
+  
+ggplotly(wykres_popular,tooltip = "text")
+```
+
+Poprzedni wykres przedstawiał procentowy rozkład popularnych gatunków,
+ten zaś przedstawia dokładnie jaka była liczebność każdego z gatunków.
+Widać wyraźną przewagę gatunku **dance pop** oraz **pop** jednak widać
+dokładnie jakie gatunki składały się na kategorię **others** w
+poprzednim wykresie kołowym ,były to wszelkie gatunki z zakresu pop, w
+szczególności **canadian pop** ,jednak w 2013 roku wyróżnił się także
+gatunek **boy band**, co mogło mieć związek z rosnącą wówczas
+popularnością wśród nastoletnich słuchaczy, zespołu *One direction* czy
+*Jonas Brothers* .
+
+`Związek między energicznością piosenki, a jej popularnością`
+
+```{r,warning=FALSE,message=FALSE}
+library(plotly)
+library(ggplot2)
+
+
+g<-ggplot(tabelka,aes(x=nrgy,y=pop)) +
+    geom_point(aes(color=as.factor(year),text=paste("Rok:",year,"<br>Energiczność:",nrgy,"<br>Popularność:",pop)))+
+  labs(
+    main="Wykres związku między energią piosenki i jej popularnością",
+    x="Energia",
+    y="Współczynnik popularnośći",
+    color="Rok"
+  )+
+  theme_bw()
+  
+ggplotly(g,tooltip = "text")
+```
+
+Widoczny wykres punktowy przedstawia jak współczynnik **pop** wpływał na
+współczynnik **nrgy** na przestrzeni lat 2010-2019. Jak widać w
+przeważającej większości lat , wraz ze wzrostem współczynnika
+popularności , wzrasta współczynnik energiczności utworu (szczególnie
+widoczne w 2018,2019 czy 2013 roku), zaś odnotowany niewielki jego
+spadek w roku 2011 czy 2016.
+
+`Związek między tempem a tanecznością danego utworu`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka,aes(x=bpm,y=dnce))+
+  geom_point()+
+  geom_smooth(method="rlm")
+
+ggplot(tabelka,aes(x=bpm,y=dnce,color=year))+
+  geom_bar(stat="identity")+
+  facet_wrap(~as.factor(year))+
+  labs(
+    title="Wykres związku między tempem ,a tanecznością",
+    x="Tempo",
+    y="Taneczność"
+  )+
+  theme(legend.position="none")
+```
+
+Powyższy wykres uwidacznia ,iż taneczność i tempo rosną wspólnie mniej
+więcej do wartości 100 współczynnika tempa(z odstępstwami np. w roku
+2019,2017,2018,2013) zaś po osiągnięciu go w każdym z lat nastąpił
+zarówno spadek tempa i taneczności wśród odsłuchiwanych utworów, zatem
+popularne stały się utwory mniej taneczne, wolniejsze.
+
+`Czy taneczność wpływa na popularność?`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(tidyverse)
+info<-tabelka %>% 
+  group_by(year) %>% 
+  summarise(mean_dnce=mean(dnce),
+            mean_pop=mean(pop))
+
+ggplot(info,aes(x=mean_dnce,y=mean_pop))+
+  geom_point()+
+  geom_line()+
+  labs(
+    x="Średnia taneczność",
+    y="Średnia popularność"
+  )
+```
+
+Zauważyć można, że wraz ze wzrostem popularności utworu, rośnie jego
+taneczność, zatem im bardziej popularna piosenka, tym bardziej jest
+odpowiednia do tańca.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+
+library(tidyverse)
+
+ggplot(tabelka,aes(x=val,y=dnce))+
+
+  labs(title = "Taneczność vs. Walencja", y = "Taneczność", x = "Walencja")+
+
+  geom_point(color="magenta2")+
+
+  theme_minimal()
+```
+
+Na wykresie widać zależność taneczności od pozytywności utworu, im utwór
+jest bardziej pozytywny, tym większy jest jego współczynnik taneczności.
+
+```{r,warning=FALSE,message=FALSE}
+library(tidyverse)
+library(ggplot2)
+tab<-tabelka %>% 
+  group_by(year) %>% 
+  summarise(srednia=round(mean(dur)),
+            s1=round(mean(val))) 
+  
+
+ggplot(tab,aes(x=year,y=s1,group=1))+
+  geom_line()+
+  geom_point()+
+  labs(
+    title="Średnia pozytywność piosenek w latach 2010-2019 ",
+    x="Rok",
+    y="Średnia pozytywność"
+  )
+```
+
+Z wykresu wynika,iż na przestrzeni lat po znacznym wzroście w 2012 roku
+spadała pozytywność odsłuchiwanych na Spotify utworów, najniższą wartość
+tego współczynnika miału utwory popularne w 2016 roku.Potem zaś nastąpił
+wzrost , na co wpływ miała publikacja w 2016 roku albumu Adele czy Eda
+Sheerana, które cieszyły się ogromną popularnością na całym świecie,
+potem zaś nastąpił ponowny spadek tego współczynnika.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tab,aes(x=year,y=srednia,group=1))+
+  geom_line()+
+  geom_point()+
+  labs(
+    title="Średnia długość piosenek w latach 2010-2019 ",
+    x="Rok",
+    y="Średnie tempo"
+  )
+```
+
+Jak widać na wykresie, na przestrzeni lat większą popularność zyskiwały
+piosenki, które były krótkie. Szczególny spadek współczynnika
+określającego długość utworów nastąpił w 2019 roku, zaś najwyższe
+wartości odnotował w 2011 roku.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(plotly)
+tan<-ggplot(tabelka, aes(x = dur,fill=year)) +
+  geom_histogram(alpha=0.7, position = "identity",) +
+  labs(title = "Rozkład długości utworów w różnych Latach", x = "Długość utworu", y = "Liczba utworów")+
+  theme_minimal()
+ggplotly(tan)
+
+
+ggplot(tabelka, aes(x = year, y = dur)) +
+  geom_boxplot() +
+  labs(title = "Rozkład długości utworów w różnych Latach", x = "Rok", y = "Długość utworu")+
+  theme_minimal()
+
+```
+
+Powyższe wykresy pokazują,że utwory o najwyższych wartościach
+współczynnika `dur`, określającego długość piosenki, były popularne w
+2013 roku,zaś te o najniższym w 2015 roku.Ponadto widać, że współczynnik
+ten ma tendencję spadkową oraz na podstawie niskiej wartości mediany
+można stwierdzić,że współczynnik ten na ogół był niski, co za tym idzie
+w latach 2010-2019 popularne były krótkie utwory.
+
+`Głośność w latach 2010-2016`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+
+ggplot(tabelka,aes(x=year,y=dB))+
+  geom_bar( stat = "identity",fill = "orange")+
+  labs(title = "Wykres słupkowy głośności piosenki w zależności od roku",
+       x = "Rok",
+       y = "dB",
+       fill = "Kolor")
+```
+
+`Energia i akustyczność utworów w latach 2010-2019`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(plotly)
+wykress<-ggplot(tabelka,aes(x=year))+
+  geom_bar(aes(y=acous), fill = "lightblue", alpha = 0.8, stat ="identity")+
+  geom_bar(aes(y=nrgy), fill = "lightpink", alpha = 0.5, stat = "identity")+
+  labs(title = "Akustyczność i Energiczność Utworów", y = "Wartość", x="Rok") +
+  scale_fill_manual(values = c("lightblue", "lightpink"))+ 
+  theme_minimal()
+wykress
+```
+
+Wykres słupkowy przedstawia rozkład wartości akustyczności i
+energiczności utworów na przestrzeni lat. Kolorem różowym zaznaczona
+jest zmienna `nrgy` , zaś kolorem niebieskim `acous`. W latach 2010-2019
+widoczny jest wzrost obu tych współczynników do roku 2015, potem zaś
+widać spadek obu tych wartości, zatem do roku 2015 popularne były
+bardziej energiczne, akustyczne piosenki, zaś po tym roku częściej
+słuchane były wolniejsze, mniej akustyczne utwory.
+
+`Taneczność utworów`
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+ggplot(tabelka,aes(x=year,y=live))+
+  geom_bar( stat = "identity",fill = "gray")+
+  labs(title = "Wykres słupkowy taneczności utworu w zależności od roku",
+       x = "Rok",
+       y = "Dnce",
+       fill = "Kolor")+
+  theme_minimal()
+```
+
+Powyższy wykres nawiązuje poniekąd do poprzedniego,gdyż wartości
+współczynnika `dnce` mają podobny rozkład do współczynników `nrgy` i
+`acous` , co oznacza wyraźny wzrost do 2015 roku,(ze spadkiem w 2012 i
+2014), po czym znaczny spadek wartości tej zmiennej.
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(webp)
+library(grid)
+
+
+w<-ggplot(tabelka,aes(x=year,y=live))+
+  geom_col(fill="lightyellow")+
+  labs(title = "Wykres słupkowy ukazujący czy utwór był nagrywany live w zależności od roku",
+       x = "Rok",
+       y = "live",
+       fill = "Kolor")+
+  theme_minimal()
+
+ w
+```
+
+# 4.Podsumowanie
+
+Celem projektu było zrozumienie związków między różnymi atrybutami
+utworów muzycznych z tabeli Spotify wraz z badaniem trendów na
+przestrzeni lat 2010/2019. Sprawdzano korelacje między takimi zmiennymi
+jak energia, głośność, długość utworu, taneczność czy akustyczność.
+
+Z przeprowadzonej analizy zauważyć można dodatnie korelacje między
+zmiennymi:
+
+-   popularność i energiczność - im bardziej energiczna piosenka tym
+    bardziej popularna
+
+-   tempo i głośność - wraz ze wzrostem tempa rośnie głośność
+
+-   taneczność i głośność
+
+-   taneczność i pozytywność utworu
+
+-   energiczność i pozytywność
+
+    Jednak akustyczność utworów muzycznych nie wpływa na ich
+    energiczność, taneczność czy pozytywność. Również długość trwania
+    piosenki nie ma związku z jego współczynnikiem pozytywności.
+
+Z wykresów zauważamy następujące trendy:
+
+-   długość piosenki się zmniejsza
+
+-   tempo też się zmniejsza
+
+-   zmniejsza się również ilość słów wypowiadanych w piosence
+
+-   głośności utworu się zwiększa
+
+-   energiczność się zmniejsza
+
+-   współczynnik odpowiadający za pewność, że piosenka była nagrywana z
+    publicznością jest stabilny
+
+-   pozytywność utworu się zwiększa
+
+-   taneczność piosenki się podnosi
+
+-   akustyczność również się zwiększa
+
+    Zmiany w długości piosenek i ilości słów wypowiadanych w utworze
+    mogą mieć związek z tym, że krótsze piosenki były bardziej
+    chwytliwe,chętniej słuchane przez odbiorców (ze względu na zmiany w
+    zachowaniach słuchaczy, jak skrócenie czasu uwagi).Może to mieć też
+    związek ze stale rozwijającą się branżą muzyczną i testowaniem przez
+    wykonawców tego , jakie utwory się najlepiej przyjmą przez
+    słuchaczy, co ma też wpływ na zmianę innych cech, jak pozytywność,
+    tempo czy głośność. Brzmienia muzyczne są zależne od trendów, zatem
+    wahania we współczynnikach opisujących energiczność, pozytywność czy
+    tempo i taneczność zależą od tego jakie były preferencje słuchaczy
+    danej dekady. W związku z rozwojem portali społecznościowych zmiany
+    te spowodowane mogły być tym jakie gatunki zyskiwały największą
+    popularność wśród ich użytkowników. Zmiany w we współczynnikach
+    opisujących cechy utworów mogą mieć również związek z tym, jacy
+    wykonawcy zyskiwali popularność, wchodzili do branży muzycznej. Dla
+    przykładu akustyczność zaczęła wzrastać w 2011 roku, kiedy to
+    popularność zyskał Ed sheeran, którego utwory charakteryzuje wysoka
+    akustyczność. Również w 2015 wzrósł współczynnik live , który
+    określa czy utwór był nagrywany z publicznością. Wtedy to
+    popularność zyskiwało wiele boy bandów, jak choćby One direction i
+    koncerty zyskały większą popularność, dzięki czemu wersje live były
+    chętniej słuchane, gdyż pozwalały przywołać klimat koncertu. Zmiany
+    w popularności utworów mogły wynikać z tego, że na początku Spotify
+    był dostępny dla ograniczonej ilości użytkowników, zaś później kiedy
+    zyskał większą popularność poprzez udostępnienie go w wielu innych
+    krajach, powstały inne platformy streamingowe takie jak Apple Music
+    czy Tidal, które mimo wysokiej liczby użytkowników Spotify skradły
+    część jego słuchaczy.
+
+Na podstawie boxplotów podzielonych ze względu na klastry , możemy
+klasyfikować piosenki jakie wystąpiły w tabeli na następujące grupy trzy
+grupy:
+
+W pierwszej skumulowane są piosenki najmniej popularne spośród
+wymienionych w tabeli, krótkie, o niewielkiej ilości słów, szybkim
+tempie, głośne, taneczne i mało akustyczne , występuje duża różnorodność
+w kwestii współczynnika walencyjności.
+
+W drugiej grupie znajdują się utwory najbardziej popularne,o mniejszej
+ilości słów, ciche, niższym tempie, za to bardziej akustyczne,mało
+radosne, niezbyt taneczne.
+
+Do trzeciej grupy przypisane są utwory średnio taneczne i pozytywne,
+mają największą ilość słów i są najdłuższe, średnio akustyczne i
+popularne.
